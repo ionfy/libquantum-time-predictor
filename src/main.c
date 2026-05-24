@@ -1,5 +1,6 @@
 #include "../MY_MACRO.h"
 #include "stdio.h"
+#include <time.h>
 
 #ifdef TIMER_ON
 CREATE_TIMER(tof, 50000)
@@ -22,7 +23,19 @@ int main(int argc, char **argv) {
   SET_SAVE_FROM_FILE(sig, "./data/sig_cl.txt");
   #endif
 
+  #ifdef FULL_TIME
+  struct timespec start, stop;
+  clock_gettime(CLOCK_MONOTONIC, &start);
+  #endif
+
   int res = mainf(argc, argv);
+
+  #ifdef FULL_TIME
+  clock_gettime(CLOCK_MONOTONIC, &stop);
+  unsigned long long fullt = (stop.tv_sec - start.tv_sec) * 1000000000LL
+    + (stop.tv_nsec - start.tv_nsec);
+  printf("REAL: %lf\n", fullt/1e9);
+  #endif
 
   #ifdef TIMER_ON
   printf("tof_t: %llu\n", GET_FULLTIME(tof));

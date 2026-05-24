@@ -1,76 +1,34 @@
-import numpy as np
-from sklearn.cluster import KMeans
 import sys
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+import numpy as np
 
+K = int(sys.argv[2] or 10)
+name = sys.argv[1]
 
-if len(sys.argv) < 3:
-    print("Использование: python script.py <файл> <кол-во кластеров>")
-    sys.exit(1)
-
-clusters_count = int(sys.argv[2])
-
-data = np.array([float(l.strip()) for l in open(sys.argv[1]) if l.strip()]).reshape(-1, 1)
-print(f"Файл: {sys.argv[1]}, точек: {len(data)}")
-
-kmeans = KMeans(n_clusters=clusters_count, n_init=100).fit(data)
-
+points = np.loadtxt("data/" + name + ".txt", ndmin=2)
+scaled = StandardScaler().fit_transform(points)
+kmeans = KMeans(n_clusters=K, n_init=20).fit(scaled)
 labels = kmeans.labels_
+centers = kmeans.cluster_centers_
 
-fake_count = clusters_count;
+size = 0
 
-print("\n {", end = "")
-for cluster in range(clusters_count):
-    cluster_points = data[labels == cluster]
-    print(f"{len(cluster_points):6d}, ", end = "")
-    if (len(cluster_points) < 10):
-        fake_count -= 1
-        continue
-print("}")
+for cl in range(K):
+    if (np.sum(labels == cl)) >= 10:
+        size += 1
 
-output = sys.argv[1].replace('.txt', '_s.txt')
-f = open(output, "w");
-f.write(f"{fake_count} ")
-for cluster in range(clusters_count):
-    cluster_points = data[labels == cluster]
-    if (len(cluster_points)>=10):
-        f.write(f"{len(cluster_points)} ")
-f.close()
+with open("data/" + name + "_cl.txt", "w") as f:
+    f.write(str(size) + " ")
+    for cl in range(K):
+        idxs = np.where(labels == cl)[0]
+        dists = np.linalg.norm(scaled[idxs] - centers[cl], axis=1)
+        nearest = idxs[np.argsort(dists)[:10]]
+        if (np.sum(labels == cl) >= 10):
+            f.write(" ".join(map(str, nearest)) + " ")
 
-print("\n {")
-
-output = sys.argv[1].replace('.txt', '_cl.txt')
-f = open(output, "w");
-
-output = sys.argv[1].replace('.txt', '_real.txt')
-f2 = open(output, "w");
-
-
-
-f.write(f"{fake_count} ")
-
-for cluster in range(clusters_count):
-    print("  ", end = "")
-    cluster_points = data[labels == cluster]
-    cluster_indices = np.where(labels == cluster)[0]
-    center = kmeans.cluster_centers_[cluster]
-    
-    distances = np.abs(cluster_points - center)
-    n_nearest = min(10, len(cluster_points))
-    nearest_idx = np.argsort(distances.flatten())[:n_nearest]
-        
-    for i, idx in enumerate(nearest_idx, 1):
-        orig_idx = cluster_indices[idx]
-        print(f"{orig_idx:6d}, ", end = "")
-        
-        if (len(cluster_points)>=10):
-            f.write(f"{orig_idx} ")
-            f2.write(f"{int(data[orig_idx][0])}\n")
-
-    
-    print()
-
-
-f.close()
-f2.close()
-print("}")
-
+with open("data/" + name + "_s.txt", "w") as f:
+    f.write(str(size) + " ")
+    for cl in range(K):
+        if (np.sum(labels == cl) >= 10):
+            f.write(str(np.sum(labels == cl)) + " ")

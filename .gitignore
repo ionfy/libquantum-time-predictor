@@ -4,6 +4,8 @@
 bin/*
 data/*
 bdata/*
+*.log
+*.err
 
 ## C
 

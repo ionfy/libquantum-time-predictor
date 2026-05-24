@@ -10,11 +10,14 @@ if len(sys.argv) < 2:
 
 filename = sys.argv[1]
 
+# Чтение данных (одно число в строке)
 data = np.array([float(line.strip()) for line in open(filename)]).reshape(-1, 1)
 
+# Метод локтя
 k_values = range(2, 18)
 inertias = [KMeans(k, n_init=18).fit(data).inertia_ for k in k_values]
 
+# График
 plt.plot(k_values, inertias, 'bo-')
 plt.xlabel('k')
 plt.ylabel('Инерция')
@@ -24,5 +27,6 @@ plt.title('Метод локтя')
 output = sys.argv[1].replace('.txt', '_elbow.png')
 plt.savefig(output, dpi=150)
 
+# Вывод результатов
 for k, i in zip(k_values, inertias):
     print(f"k={k}: {i:.2f}")
